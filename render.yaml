@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: ai-engine
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: MODEL_PRIMARY
+        value: deepseek/deepseek-chat-v3-0324:free
+      - key: MODEL_FALLBACK
+        value: openai/gpt-oss-120b:free
+      - key: MODEL_LIGHTWEIGHT
+        value: meta-llama/llama-3.2-3b-instruct:free
+      # Free Render web services have no persistent disk, so checkpointing
+      # and file storage must point at external free-tier services rather
+      # than sqlite/local (see Free_Tier_Resource_Plan.docx).
+      - key: CHECKPOINT_BACKEND
+        value: postgres
+      - key: POSTGRES_DSN
+        sync: false
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: auto
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: OCR_BACKEND
+        value: tesseract
+      - key: API_AUTH_ENABLED
+        value: "true"
+      - key: API_KEY
+        sync: false
