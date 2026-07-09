@@ -82,16 +82,24 @@ See `Free_Tier_Resource_Plan.docx` and `MILESTONE_1_CHECKLIST.md` for the full f
 outstanding action items. Quick version:
 
 1. Push this repo to GitHub.
-2. Create a free [Render](https://render.com) account, connect the repo — `render.yaml` in this repo
-   is picked up automatically and defines the web service, health check, and required env vars.
+2. Create a free [Belmo](https://belmo.io) account and install the Belmo GitHub App on this repo
+   (no credit card required, unlike some alternatives — Belmo builds directly from the `Dockerfile`
+   at the repo root and never sleeps on the free tier). Belmo auto-detects the exposed port from
+   `EXPOSE 8000` and drives health checks off the `HEALTHCHECK` instruction, both already set in the
+   `Dockerfile`.
 3. Create a free [Neon](https://neon.tech) Postgres project and paste its connection string into the
-   `POSTGRES_DSN` env var on Render (free Render web services have no persistent disk, so SQLite/local
-   storage won't survive a restart — Postgres + S3-compatible storage are required in this setup).
-4. Create a free [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket + API token, and fill in
-   `AWS_S3_BUCKET` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `S3_ENDPOINT_URL` on Render.
-5. Create a free [OpenRouter](https://openrouter.ai/keys) account and add `OPENROUTER_API_KEY`. The
-   `render.yaml` defaults `MODEL_PRIMARY`/`MODEL_FALLBACK`/`MODEL_LIGHTWEIGHT` to `:free` OpenRouter
-   models so the whole stack runs at $0/month.
+   `POSTGRES_DSN` environment variable in Belmo's dashboard, and set `CHECKPOINT_BACKEND=postgres`
+   (Belmo's free container has no persistent disk, so SQLite/local storage won't survive a restart —
+   Postgres + S3-compatible storage are required in this setup, same as most free-tier PaaS hosts).
+4. Create a free [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket + API token, and add
+   `STORAGE_BACKEND=s3`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+   `S3_ENDPOINT_URL` as environment variables in Belmo's dashboard.
+5. Create a free [OpenRouter](https://openrouter.ai/keys) account and add `OPENROUTER_API_KEY`. Set
+   `MODEL_PRIMARY`/`MODEL_FALLBACK`/`MODEL_LIGHTWEIGHT` to `:free` OpenRouter model slugs (see
+   `.env.example`) so the whole stack runs at $0/month.
+
+A `render.yaml` blueprint is also included if you'd rather deploy on [Render](https://render.com)
+instead (also free, no card required in most cases) — Render Blueprints pick it up automatically.
 
 CI (`.github/workflows/ci.yml`) runs lint + tests on every push via GitHub Actions' free tier.
 

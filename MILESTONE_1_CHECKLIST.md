@@ -17,9 +17,9 @@ R2 + OpenRouter free models + Tesseract + GitHub Actions).
 
 ## Your action items (accounts & external dependencies)
 
-- [ ] Create a free **OpenRouter** account → generate an API key → add it to `.env` as `OPENROUTER_API_KEY`
-- [ ] Push this project to a **GitHub** repo (free)
-- [ ] Create a free **Render** account → connect the GitHub repo → deploy the web service
+- [ ] Create a free **OpenRouter** account → generate an API key → add it to `.env` as `OPENROUTER_API_KEY` (in progress — signup CAPTCHA was failing, likely network/DNS related)
+- [x] Push this project to a **GitHub** repo (free) — done: https://github.com/mehar11221122/resume-generator
+- [ ] Create a free **Belmo.io** account → install the Belmo GitHub App on the repo → deploy the Docker service (switched from Render after hitting a card-verification rate limit there; Belmo needs no card at all)
 - [ ] Create a free **Neon** account → create a Postgres project → copy the connection string into `POSTGRES_DSN` (and set `CHECKPOINT_BACKEND=postgres`)
 - [ ] Create a free **Cloudflare** account → create an R2 bucket + API token → add the credentials once the R2 storage backend is implemented
 - [ ] Provide sample resumes, PDFs, Word docs, and scanned/photographed images for QA of extraction and OCR accuracy (per the scope doc's stated dependency)
