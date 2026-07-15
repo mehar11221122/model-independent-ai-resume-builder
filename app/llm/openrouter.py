@@ -1,14 +1,14 @@
 """OpenRouter-backed chat model factory.
 
-OpenRouter exposes an OpenAI-compatible API, so we reuse LangChain's
-`ChatOpenAI` client and simply point it at OpenRouter's base URL. This is the
-single place in the codebase that knows how to talk to "an LLM provider" -
-every provider swap (OpenAI <-> Anthropic <-> Google <-> anything else
-OpenRouter lists) happens by changing a model slug string, never this code.
+OpenRouter is our default/primary provider - see `app/llm/providers.py` for
+the generic OpenAI-compatible client this builds on, and `app/llm/router.py`
+for how it's chained with independent secondary providers (Groq, Gemini) as
+capacity fallbacks.
 """
 from langchain_openai import ChatOpenAI
 
 from app.core.config import get_settings
+from app.llm.providers import ProviderCredentials, build_chat_model
 
 
 def get_chat_model(model: str, *, temperature: float = 0.2, **kwargs) -> ChatOpenAI:
@@ -25,15 +25,9 @@ def get_chat_model(model: str, *, temperature: float = 0.2, **kwargs) -> ChatOpe
             "OPENROUTER_API_KEY is not set. Copy .env.example to .env and add your key."
         )
 
-    return ChatOpenAI(
-        model=model,
+    creds = ProviderCredentials(
+        name="openrouter",
         api_key=settings.openrouter_api_key,
         base_url=settings.openrouter_base_url,
-        temperature=temperature,
-        default_headers={
-            # Recommended by OpenRouter for attribution / rate-limit tiers.
-            "HTTP-Referer": "https://github.com/",
-            "X-Title": "Model-Independent AI Engine",
-        },
-        **kwargs,
     )
+    return build_chat_model(creds, model, temperature=temperature, **kwargs)

@@ -1,0 +1,4 @@
+INFO:     127.0.0.1:63044 - "GET / HTTP/1.1" 200 OK
+2026-07-15 15:10:05,357 | INFO     | httpx | HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:63053 - "POST /resume/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63078 - "POST /resume/sessions HTTP/1.1" 200 OK

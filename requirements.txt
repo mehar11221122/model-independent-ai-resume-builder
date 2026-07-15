@@ -10,6 +10,7 @@ pydantic
 pydantic-settings
 python-dotenv
 python-multipart
+python-dateutil
 
 pymupdf
 pdfplumber

@@ -29,9 +29,15 @@ def check_date_consistency(resume: ResumeOutput) -> list[str]:
 
 def check_minimum_content(resume: ResumeOutput) -> list[str]:
     errors = []
-    if not resume.work_experience and not resume.education and not resume.projects:
+    if (
+        not resume.work_experience
+        and not resume.education
+        and not resume.projects
+        and not resume.volunteer_experience
+    ):
         errors.append(
-            "Resume has no work experience, education, or projects - insufficient content."
+            "Resume has no work experience, education, projects, or volunteer "
+            "experience - insufficient content."
         )
     return errors
 

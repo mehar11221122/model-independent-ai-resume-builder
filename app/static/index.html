@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Resume Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lexend:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --panel: #141a2b;
+    --panel-2: #1b2236;
+    --panel-3: #212a42;
+    --border: #2a3350;
+    --border-soft: #232c46;
+    --text: #eef1fb;
+    --muted: #8d97b8;
+    --muted-2: #6b7695;
+    --accent: #7c93ff;
+    --accent-2: #a679ff;
+    --accent-3: #52d3c6;
+    --good: #35d18a;
+    --bad: #ff6b7a;
+    --warn: #ffb454;
+    --radius: 18px;
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: "Lexend", var(--font);
+  }
+  * { box-sizing: border-box; }
+  /* Base reset so any button always looks intentional, even one whose
+     specific class selector doesn't happen to match its current markup -
+     otherwise it silently falls back to raw OS/browser button chrome. */
+  button {
+    font-family: inherit; color: inherit; background: none; border: none;
+    padding: 0; margin: 0; cursor: pointer; -webkit-appearance: none; appearance: none;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(760px 480px at 12% -8%, rgba(124,147,255,.20), transparent 60%),
+      radial-gradient(720px 520px at 108% 8%, rgba(166,121,255,.18), transparent 60%),
+      radial-gradient(900px 700px at 50% 115%, rgba(82,211,198,.10), transparent 60%);
+    background-attachment: fixed;
+  }
+  .bg-orb {
+    position: fixed; border-radius: 50%; filter: blur(70px); opacity: .35; z-index: -1;
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  .bg-orb.a { width: 420px; height: 420px; top: -120px; left: -100px; background: var(--accent); }
+  .bg-orb.b { width: 380px; height: 380px; bottom: -140px; right: -100px; background: var(--accent-2); animation-delay: -8s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,-24px) scale(1.08); } }
+
+  .wrap { max-width: 820px; margin: 0 auto; padding: 28px 20px 40px; position: relative; }
+
+  header { margin-bottom: 22px; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px -8px rgba(124,147,255,.55);
+  }
+  .brand-icon svg { width: 22px; height: 22px; }
+  .brand-text h1 {
+    margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -.01em;
+  }
+  .brand-text p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--good);
+    background: rgba(53,209,138,.12); border: 1px solid rgba(53,209,138,.3);
+    border-radius: 999px; padding: 5px 10px 5px 8px; font-weight: 600;
+  }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 0 rgba(53,209,138,.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(53,209,138,.55); } 70% { box-shadow: 0 0 0 6px rgba(53,209,138,0); } 100% { box-shadow: 0 0 0 0 rgba(53,209,138,0); } }
+
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .restart-link {
+    font-size: 12.5px; color: var(--muted); background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 7px 14px; cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: color .15s, border-color .15s, transform .1s;
+  }
+  .restart-link:hover { color: var(--text); border-color: var(--accent); transform: translateY(-1px); }
+  .restart-link svg { width: 13px; height: 13px; }
+
+  /* ---- Stepper ---- */
+  .stepper { display: flex; align-items: center; gap: 6px; padding: 4px 2px; }
+  .step { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .step-dot {
+    width: 24px; height: 24px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; background: var(--panel-2); border: 1.5px solid var(--border); color: var(--muted-2);
+    transition: all .25s ease;
+  }
+  .step-label { font-size: 12px; color: var(--muted-2); font-weight: 600; white-space: nowrap; transition: color .25s; }
+  .step-line { flex: 1; height: 2px; background: var(--border); border-radius: 2px; transition: background .3s ease; overflow: hidden; }
+  .step.active .step-dot { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; box-shadow: 0 0 0 4px rgba(124,147,255,.15); }
+  .step.active .step-label { color: var(--text); }
+  .step.done .step-dot { background: var(--good); border-color: transparent; color: #06231a; }
+  .step.done .step-label { color: var(--muted); }
+  .step.done + .step-line, .step.active + .step-line { background: linear-gradient(90deg, var(--accent), var(--border)); }
+
+  /* ---- Chat shell ---- */
+  .chat-shell {
+    background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    box-shadow: 0 30px 80px -40px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.04);
+    display: flex; flex-direction: column;
+    height: 74vh; min-height: 500px; max-height: 740px;
+    overflow: hidden; position: relative; margin-top: 18px;
+  }
+  .drop-overlay {
+    position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+    background: rgba(11,15,26,.82); border: 2px dashed var(--accent); border-radius: var(--radius);
+    color: var(--text); font-weight: 600; font-size: 15px; backdrop-filter: blur(2px);
+  }
+
+  .messages {
+    flex: 1; overflow-y: auto; padding: 24px 22px; scroll-behavior: smooth;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+  .msg-block { margin-bottom: 16px; animation: rise .32s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .msg-row { display: flex; gap: 10px; align-items: flex-end; max-width: 100%; }
+  .msg-row.user { justify-content: flex-end; }
+  .avatar {
+    flex: none; width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-3); border: 1px solid var(--border);
+  }
+  .avatar svg { width: 17px; height: 17px; }
+  .msg-row.bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; }
+  .msg-row.user .avatar { background: var(--panel-3); color: var(--accent-3); }
+
+  .bubble {
+    max-width: 76%; padding: 12px 16px; border-radius: 16px; font-size: 14.5px;
+    line-height: 1.55; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .msg-row.bot .bubble { background: var(--panel-2); border: 1px solid var(--border-soft); border-bottom-left-radius: 5px; }
+  .msg-row.user .bubble {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+    border-bottom-right-radius: 5px; box-shadow: 0 8px 20px -10px rgba(124,147,255,.5);
+  }
+  .bubble.wide { max-width: 100%; }
+  .bubble .file-chip {
+    display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.18); border-radius: 999px;
+    padding: 3px 10px 3px 8px; font-size: 11.5px; margin: 5px 4px 0 0;
+  }
+  .msg-time { font-size: 10.5px; color: var(--muted-2); margin: 4px 42px 0; }
+  .msg-row.user + .msg-time { text-align: right; margin: 4px 0 0 42px; }
+
+  .typing-dots { display: flex; gap: 4px; padding: 5px 2px; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+    animation: bounce 1.1s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .15s; }
+  .typing-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  .quick-replies { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; margin-left: 42px; }
+  .quick-reply-btn {
+    background: var(--panel-3); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 500;
+    transition: border-color .15s, transform .1s, background .15s;
+  }
+  .quick-reply-btn:hover { border-color: var(--accent); transform: translateY(-1px); background: var(--panel-2); }
+  .quick-reply-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .quick-reply-btn.option-btn { border-color: var(--border-soft); }
+  .quick-reply-btn.option-btn:hover { border-color: var(--accent-3); }
+  .options-hint { font-size: 11px; color: var(--muted-2); margin: 6px 0 0 42px; }
+
+  /* ---- Composer ---- */
+  .composer { border-top: 1px solid var(--border-soft); padding: 12px 16px; background: rgba(20,26,43,.6); }
+  .file-chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .file-chips-row .chip {
+    display: flex; align-items: center; gap: 6px; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 8px 4px 10px; font-size: 12px;
+  }
+  .file-chips-row .chip svg { width: 13px; height: 13px; flex: none; }
+  .file-chips-row .chip button {
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1;
+    padding: 0 2px;
+  }
+  .file-chips-row .chip button:hover { color: var(--bad); }
+  .composer-row { display: flex; align-items: flex-end; gap: 8px; }
+  .icon-btn {
+    flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--muted); font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: border-color .15s, color .15s, transform .1s;
+  }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .icon-btn:hover { border-color: var(--accent); color: var(--text); transform: translateY(-1px); }
+  #fileInput { display: none; }
+  .composer-input-wrap {
+    flex: 1; background: var(--panel-2); border: 1px solid var(--border); border-radius: 22px;
+    padding: 4px 6px 4px 16px; display: flex; align-items: flex-end; transition: border-color .15s;
+  }
+  .composer-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,147,255,.12); }
+  #composerInput {
+    flex: 1; background: transparent; border: none; color: var(--text);
+    padding: 9px 4px; font-size: 14.5px; font-family: inherit;
+    resize: none; max-height: 120px; line-height: 1.4; outline: none;
+  }
+  #composerInput::placeholder { color: var(--muted-2); }
+  #sendBtn {
+    flex: none; width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; margin: 2px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; transition: opacity .15s, transform .1s;
+  }
+  #sendBtn svg { width: 16px; height: 16px; }
+  #sendBtn:hover:not(:disabled) { transform: translateY(-1px) scale(1.03); }
+  #sendBtn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  .composer-hint { font-size: 11px; color: var(--muted-2); margin-top: 9px; text-align: center; }
+  .composer-hint kbd { background: var(--panel-3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 10px; }
+
+  /* ---- Resume card (rendered inside a bot bubble) ---- */
+  .resume-card-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--good); font-size: 13px; font-weight: 700;
+  }
+  .resume-card-head svg { width: 16px; height: 16px; }
+  .resume-doc { background: #fdfdff; color: #1b1f2a; border-radius: 12px; padding: 26px; box-shadow: 0 1px 0 rgba(0,0,0,.04) inset; }
+  .resume-doc[dir="rtl"] { text-align: right; }
+  .resume-doc h2 { margin: 0 0 2px; font-size: 22px; font-family: var(--font-display); }
+  .resume-doc .contact-line { color: #555; font-size: 12.5px; margin-bottom: 16px; }
+  .resume-doc .summary { font-size: 13.5px; line-height: 1.6; margin-bottom: 20px; color: #333; }
+  .resume-doc section { margin-bottom: 18px; }
+  .resume-doc section h3 {
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: #6d5eff;
+    border-bottom: 1px solid #e4e7ef; padding-bottom: 6px; margin-bottom: 10px;
+  }
+  .exp-item, .edu-item { margin-bottom: 12px; }
+  .exp-item .title-line, .edu-item .title-line { display: flex; justify-content: space-between; font-weight: 600; font-size: 13.5px; gap: 10px; }
+  .exp-item .sub-line, .edu-item .sub-line { color: #666; font-size: 12px; margin: 2px 0 6px; }
+  .exp-item ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: #333; }
+  .skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skills-list span { background: #eef1ff; color: #4a3fd9; border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; }
+
+  .actions-row { display: flex; gap: 9px; margin-top: 14px; flex-wrap: wrap; }
+  .actions-row .btn-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel-3); border: 1px solid var(--border); color: var(--text);
+    border-radius: 9px; padding: 8px 14px; font-size: 12.5px; cursor: pointer; font-weight: 500;
+    transition: border-color .15s, transform .1s;
+  }
+  .actions-row .btn-sm svg { width: 13px; height: 13px; }
+  .actions-row .btn-sm:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .actions-row .btn-sm.copied { border-color: var(--good); color: var(--good); }
+  pre.json-view {
+    overflow: auto; background: #0b0f1a; padding: 14px; border-radius: 10px;
+    font-size: 11.5px; margin-top: 12px; max-height: 260px;
+  }
+
+  footer { text-align: center; color: var(--muted-2); font-size: 12px; margin-top: 22px; }
+  footer a { color: var(--accent); text-decoration: none; }
+  .hidden { display: none !important; }
+
+  /* ---- Fullscreen resume modal ---- */
+  .resume-modal {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(6,9,16,.86); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: clamp(0px, 3vw, 32px);
+  }
+  .resume-modal-card {
+    width: 100%; max-width: 1000px; height: 100%; max-height: 100vh;
+    background: var(--panel); border: 1px solid var(--border-soft);
+    border-radius: 0; box-shadow: 0 40px 100px -30px rgba(0,0,0,.8);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  @media (min-width: 640px) {
+    .resume-modal-card { max-height: 94vh; border-radius: var(--radius); }
+  }
+  .resume-modal-topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border-soft); flex-wrap: wrap; flex: none;
+  }
+  .resume-modal-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--good); }
+  .resume-modal-title svg { width: 17px; height: 17px; }
+  .resume-modal-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .resume-modal-actions .icon-btn { width: 36px; height: 36px; }
+  .resume-modal-actions .icon-btn svg { width: 16px; height: 16px; }
+  .resume-modal-actions .action-btn {
+    display: inline-flex; align-items: center; gap: 7px; flex: none;
+    height: 36px; padding: 0 14px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    font-family: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
+    cursor: pointer; white-space: nowrap;
+    transition: border-color .15s, transform .1s, background-color .15s, color .15s;
+  }
+  .resume-modal-actions .action-btn svg { width: 14px; height: 14px; flex: none; }
+  .resume-modal-actions .action-btn:hover {
+    border-color: var(--accent); color: var(--text); background: var(--panel-3); transform: translateY(-1px);
+  }
+  .resume-modal-actions .action-btn:active { transform: translateY(0); }
+  .resume-modal-actions .action-btn.copied { border-color: var(--good); color: var(--good); background: var(--panel-2); }
+  @media (max-width: 560px) {
+    .resume-modal-actions .action-btn { padding: 0; width: 36px; justify-content: center; }
+    .resume-modal-actions .action-btn span { display: none; }
+  }
+  .resume-modal-body { flex: 1; overflow-y: auto; padding: 26px clamp(16px, 5vw, 56px) 40px; }
+  .resume-modal-body .resume-doc { max-width: 780px; margin: 0 auto; }
+  .resume-modal-body pre.json-view { max-width: 780px; margin: 16px auto 0; max-height: 44vh; }
+  .resume-modal-actions .action-btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff;
+  }
+  .resume-modal-actions .action-btn.primary:hover { filter: brightness(1.08); border-color: transparent; }
+
+  /* ---- Resume themes (applied to #resumeModalDoc via theme-* class) ---- */
+  .resume-doc.theme-modern h2 { text-transform: uppercase; letter-spacing: .05em; font-family: var(--font); font-weight: 800; }
+  .resume-doc.theme-modern section h3 { color: #0f9b8e; border-bottom-color: #cdeee9; }
+  .resume-doc.theme-modern .skills-list span { background: #e6f7f5; color: #0f7d72; }
+
+  .resume-doc.theme-minimal h2 { font-weight: 600; }
+  .resume-doc.theme-minimal section h3 { color: #555; border-bottom-color: #eee; letter-spacing: .09em; }
+  .resume-doc.theme-minimal .skills-list span { background: #f1f1f1; color: #333; }
+
+  .resume-doc.theme-bold h2 { font-weight: 800; }
+  .resume-doc.theme-bold section h3 {
+    color: #fff; background: #e0553f; display: inline-block; border-bottom: none;
+    padding: 3px 12px; border-radius: 6px; letter-spacing: .04em; margin-bottom: 12px;
+  }
+  .resume-doc.theme-bold .skills-list span { background: #fdeae6; color: #c2401f; }
+
+  /* ---- Resume edit screen ---- */
+  .resume-edit-inner { max-width: 780px; margin: 0 auto; }
+  .resume-edit-intro { font-size: 12.5px; color: var(--muted-2); margin-bottom: 20px; }
+  .theme-picker { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .theme-swatch {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); cursor: pointer;
+    font-size: 12.5px; font-weight: 600; font-family: inherit; transition: border-color .15s, transform .1s;
+  }
+  .theme-swatch .dot { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+  .theme-swatch:hover { transform: translateY(-1px); }
+  .theme-swatch.active { border-color: var(--accent); background: var(--panel-3); color: var(--text); }
+
+  .edit-section { margin-bottom: 28px; }
+  .edit-section-head { margin-bottom: 12px; }
+  .edit-section-head h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 12px; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .field-group label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .field-group input, .field-group textarea {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit; outline: none;
+    transition: border-color .15s; width: 100%;
+  }
+  .field-group input:focus, .field-group textarea:focus { border-color: var(--accent); }
+  .field-group textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .field-hint { font-size: 11px; color: var(--muted-2); }
+  .field-checkbox { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); margin: 2px 0 10px; }
+  .field-checkbox input { width: auto; }
+
+  .entry-card {
+    background: var(--panel-2); border: 1px solid var(--border-soft); border-radius: 12px;
+    padding: 16px 16px 4px; margin-bottom: 12px; position: relative;
+  }
+  .entry-card-remove {
+    position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--panel-3); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: border-color .15s, color .15s;
+  }
+  .entry-card-remove:hover { border-color: var(--bad); color: var(--bad); }
+  .entry-card-remove svg { width: 12px; height: 12px; }
+
+  .add-entry-btn {
+    display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border);
+    color: var(--muted); padding: 9px 15px; border-radius: 9px; font-size: 12.5px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: border-color .15s, color .15s;
+  }
+  .add-entry-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .add-entry-btn svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+<div class="bg-orb a"></div>
+<div class="bg-orb b"></div>
+<div class="wrap">
+  <header>
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3h1v2a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3v-2h1a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3Z"/><circle cx="9" cy="11" r="1" fill="#fff" stroke="none"/><circle cx="15" cy="11" r="1" fill="#fff" stroke="none"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>AI Resume Builder</h1>
+          <p>Model-independent engine &middot; Milestone 1 live demo</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-pill"><span class="dot"></span>Online</span>
+        <div class="restart-link" id="restartLink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>
+          Restart
+        </div>
+      </div>
+    </div>
+
+    <div class="stepper" id="stepper">
+      <div class="step" data-step="1"><div class="step-dot">1</div><div class="step-label">Language</div></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2"><div class="step-dot">2</div><div class="step-label">Background</div></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3"><div class="step-dot">3</div><div class="step-label">Details</div></div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4"><div class="step-dot">4</div><div class="step-label">Resume</div></div>
+    </div>
+  </header>
+
+  <div class="chat-shell" id="chatShell">
+    <div class="drop-overlay hidden" id="dropOverlay">Drop files to attach &#128206;</div>
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="file-chips-row hidden" id="fileChipsRow"></div>
+      <div class="composer-row">
+        <button class="icon-btn" id="attachBtn" title="Attach files">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="fileInput" multiple accept=".pdf,.docx,.png,.jpg,.jpeg,.webp" />
+        <div class="composer-input-wrap">
+          <textarea id="composerInput" rows="1" placeholder="Type a message..." disabled></textarea>
+          <button id="sendBtn" title="Send" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="composer-hint">Free-tier AI models can take up to a minute to respond &middot; press <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for a new line</div>
+    </div>
+  </div>
+
+  <footer>
+    Model-Independent AI Engine &middot; <a href="/docs" target="_blank">API docs (Swagger)</a>
+  </footer>
+</div>
+
+<div class="resume-modal hidden" id="resumeModal">
+  <div class="resume-modal-card">
+    <div class="resume-modal-topbar">
+      <div class="resume-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+        <span id="resumeModalTitleText">Resume ready</span>
+      </div>
+      <div class="resume-modal-actions" id="resumeViewActions">
+        <button class="action-btn" id="modalEditBtn" title="Edit this resume">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>Edit</span>
+        </button>
+        <button class="action-btn" id="modalCopyBtn" title="Copy resume as plain text">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Copy text</span>
+        </button>
+        <button class="action-btn" id="modalJsonBtn" title="View the raw structured JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>View JSON</span>
+        </button>
+        <button class="action-btn" id="modalDownloadBtn" title="Download or print this resume">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          <span>Download / Print</span>
+        </button>
+      </div>
+      <div class="resume-modal-actions hidden" id="resumeEditActions">
+        <button class="action-btn" id="editCancelBtn" title="Discard changes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          <span>Cancel</span>
+        </button>
+        <button class="action-btn primary" id="editSaveBtn" title="Save changes and preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Save &amp; preview</span>
+        </button>
+      </div>
+      <button class="icon-btn" id="modalCloseBtn" title="Close (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="resume-modal-body" id="resumeModalBody">
+      <div class="resume-doc" id="resumeModalDoc"></div>
+      <pre class="json-view hidden" id="resumeModalJsonView"></pre>
+    </div>
+    <div class="resume-modal-body hidden" id="resumeEdit"></div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let threadId = null;
+let pendingFiles = [];
+let questionQueue = [];
+let currentQuestionField = null;
+let collectedAnswers = {};
+let language = "en";
+// mode: "language" | "background" | "answering" | "done" | "busy"
+let mode = "language";
+
+const el = (id) => document.getElementById(id);
+const messagesEl = el("messages");
+
+const ICONS = {
+  bot: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="#fff" stroke="none"/><circle cx="9" cy="13" r="1.4" fill="#fff" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="#fff" stroke="none"/><path d="M9 17h6"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>`,
+  pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>`,
+  doc: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>`,
+  img: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
+  copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>`,
+  sparkle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>`,
+};
+
+function fileIcon(filename) {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  if (ext === "pdf") return ICONS.pdf;
+  if (["doc", "docx"].includes(ext)) return ICONS.doc;
+  return ICONS.img;
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function addRow(who, innerHtml, wide) {
+  const block = document.createElement("div");
+  block.className = "msg-block";
+  const avatarIcon = who === "user" ? ICONS.user : ICONS.bot;
+  block.innerHTML = `
+    <div class="msg-row ${who}">
+      <div class="avatar">${avatarIcon}</div>
+      <div class="bubble${wide ? " wide" : ""}">${innerHtml}</div>
+    </div>
+    <div class="msg-time">${timeNow()}</div>
+  `;
+  messagesEl.appendChild(block);
+  scrollToBottom();
+  return block;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function addBotMessage(text) {
+  return addRow("bot", escapeHtml(text));
+}
+
+function addUserMessage(text, files) {
+  const chips = (files || []).map(f => `<span class="file-chip">${fileIcon(f.name)}${escapeHtml(f.name)}</span>`).join("");
+  const body = (text ? escapeHtml(text) : "") + (chips ? `<div>${chips}</div>` : "");
+  return addRow("user", body || "&nbsp;");
+}
+
+function addQuickReplies(options, extraClass, label) {
+  const wrap = document.createElement("div");
+  if (label) {
+    const hint = document.createElement("div");
+    hint.className = "options-hint";
+    hint.textContent = label;
+    wrap.appendChild(hint);
+  }
+  const row = document.createElement("div");
+  row.className = "quick-replies";
+  options.forEach((opt) => {
+    const btn = document.createElement("button");
+    btn.className = "quick-reply-btn" + (extraClass ? " " + extraClass : "");
+    btn.textContent = opt.label;
+    btn.addEventListener("click", () => {
+      Array.from(row.children).forEach((b) => (b.disabled = true));
+      opt.onPick();
+    });
+    row.appendChild(btn);
+  });
+  wrap.appendChild(row);
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+  return wrap;
+}
+
+let typingBlock = null;
+function showTyping() {
+  typingBlock = addRow("bot", `<div class="typing-dots"><span></span><span></span><span></span></div>`);
+}
+function hideTyping() {
+  if (typingBlock) { typingBlock.remove(); typingBlock = null; }
+}
+
+function setComposer(enabled, placeholder) {
+  el("composerInput").disabled = !enabled;
+  el("sendBtn").disabled = !enabled;
+  if (placeholder) el("composerInput").placeholder = placeholder;
+  if (enabled) el("composerInput").focus();
+}
+
+/* ---- Stepper ---- */
+function setStep(n) {
+  document.querySelectorAll(".step").forEach((stepEl) => {
+    const i = Number(stepEl.dataset.step);
+    stepEl.classList.remove("active", "done");
+    if (i < n) stepEl.classList.add("done");
+    else if (i === n) stepEl.classList.add("active");
+  });
+  document.querySelectorAll(".step-dot").forEach((dot, idx) => {
+    const stepEl = dot.closest(".step");
+    if (stepEl.classList.contains("done")) dot.innerHTML = ICONS.check;
+    else dot.textContent = String(idx + 1);
+  });
+}
+setStep(1);
+
+/* ---- Attach / file chips ---- */
+el("attachBtn").addEventListener("click", () => el("fileInput").click());
+el("fileInput").addEventListener("change", () => {
+  addFiles(el("fileInput").files);
+  el("fileInput").value = "";
+});
+
+function addFiles(fileList) {
+  pendingFiles = pendingFiles.concat(Array.from(fileList));
+  renderFileChips();
+}
+
+function renderFileChips() {
+  const row = el("fileChipsRow");
+  if (pendingFiles.length === 0) { row.classList.add("hidden"); row.innerHTML = ""; return; }
+  row.classList.remove("hidden");
+  row.innerHTML = pendingFiles.map((f, i) => `
+    <span class="chip">${fileIcon(f.name)}${escapeHtml(f.name)}<button data-idx="${i}">&times;</button></span>
+  `).join("");
+  row.querySelectorAll("button[data-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pendingFiles.splice(Number(btn.dataset.idx), 1);
+      renderFileChips();
+    });
+  });
+}
+
+/* ---- Whole-window drag & drop ---- */
+const chatShell = el("chatShell");
+const dropOverlay = el("dropOverlay");
+let dragDepth = 0;
+["dragenter", "dragover"].forEach((evt) => {
+  chatShell.addEventListener(evt, (e) => {
+    e.preventDefault();
+    if (mode === "busy" || mode === "done" || mode === "language") return;
+    dragDepth++;
+    dropOverlay.classList.remove("hidden");
+  });
+});
+["dragleave", "drop"].forEach((evt) => {
+  chatShell.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (evt === "drop" || dragDepth === 0) dropOverlay.classList.add("hidden");
+  });
+});
+chatShell.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropOverlay.classList.add("hidden");
+  if (mode === "busy" || mode === "done" || mode === "language") return;
+  if (e.dataTransfer.files && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+
+/* ---- Composer input auto-grow + enter-to-send ---- */
+const composerInput = el("composerInput");
+composerInput.addEventListener("input", () => {
+  composerInput.style.height = "auto";
+  composerInput.style.height = Math.min(composerInput.scrollHeight, 120) + "px";
+});
+composerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    el("sendBtn").click();
+  }
+});
+
+el("sendBtn").addEventListener("click", onSend);
+
+async function onSend() {
+  const text = composerInput.value.trim();
+  if (!text && pendingFiles.length === 0) return;
+
+  if (mode === "background") {
+    addUserMessage(text, pendingFiles);
+    const files = pendingFiles;
+    composerInput.value = ""; composerInput.style.height = "auto";
+    pendingFiles = []; renderFileChips();
+    await startSession(text, files);
+  } else if (mode === "answering") {
+    if (!text) return;
+    addUserMessage(text);
+    composerInput.value = ""; composerInput.style.height = "auto";
+    recordAnswer(text);
+  }
+}
+
+function recordAnswer(value) {
+  collectedAnswers[currentQuestionField] = value;
+  askNextQuestionOrSubmit();
+}
+
+/* ---- API helper ---- */
+async function callApi(path, options) {
+  let res;
+  try {
+    res = await fetch(API + path, options);
+  } catch {
+    throw new Error(
+      "Couldn't reach the server at all - it may have restarted or the tunnel link expired. " +
+      "Try again in a moment, or ask for a fresh link."
+    );
+  }
+
+  const text = await res.text();
+  const looksLikeHtml = /^\s*<(!doctype|html)/i.test(text);
+
+  if (!res.ok) {
+    if (looksLikeHtml) {
+      // A gateway/proxy error page (e.g. Cloudflare 502/524), not something
+      // our own API returned - never dump raw markup into the chat.
+      if (res.status === 524) {
+        throw new Error(
+          "The AI model is taking longer than the connection allows (gateway timeout). " +
+          "This happens when a free-tier model is congested - please try again."
+        );
+      }
+      throw new Error(`The server/tunnel returned an unexpected error (HTTP ${res.status}). Please try again.`);
+    }
+    let data;
+    try { data = JSON.parse(text); } catch { data = { detail: text }; }
+    const msg = data.detail ? (Array.isArray(data.detail) ? JSON.stringify(data.detail) : data.detail) : `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("The server sent back something unexpected. Please try again.");
+  }
+}
+
+/* ---- Conversation flow ---- */
+function startConversation() {
+  addBotMessage("Hi! I'm your AI resume assistant. What language should your resume be in?");
+  addQuickReplies([
+    { label: "\ud83c\uddfa\ud83c\uddf8 English", onPick: () => pickLanguage("en", "English") },
+    { label: "\ud83c\uddf8\ud83c\udde6 Arabic (\u0627\u0644\u0639\u0631\u0628\u064a\u0629)", onPick: () => pickLanguage("ar", "Arabic") },
+  ]);
+}
+
+function pickLanguage(code, label) {
+  language = code;
+  addUserMessage(label);
+  mode = "background";
+  setStep(2);
+  addBotMessage("Great! Now tell me about your work history, education, and skills - paste as much as you'd like, or attach a resume/photo (drag & drop works too), then hit send.");
+  setComposer(true, "Paste your background here...");
+}
+
+async function startSession(text, files) {
+  mode = "busy";
+  setComposer(false);
+  showTyping();
+  try {
+    const form = new FormData();
+    form.append("language", language);
+    if (text) form.append("text", text);
+    for (const f of files) form.append("files", f);
+    const data = await callApi("/resume/sessions", { method: "POST", body: form });
+    threadId = data.thread_id;
+    hideTyping();
+    handleSessionResponse(data);
+  } catch (err) {
+    hideTyping();
+    addBotMessage("Something went wrong: " + err.message + "\nWant to try again? Just send another message.");
+    mode = "background";
+    setComposer(true);
+  }
+}
+
+function handleSessionResponse(data) {
+  threadId = data.thread_id;
+  if (data.status === "awaiting_clarification") {
+    questionQueue = data.follow_up_questions || [];
+    collectedAnswers = {};
+    setStep(3);
+    if (questionQueue.length === 0) {
+      addBotMessage("Hmm, I need a bit more info but couldn't figure out what to ask - could you add a few more details?");
+      mode = "background";
+      setStep(2);
+      setComposer(true);
+      return;
+    }
+    addBotMessage("Thanks! I just need a few more details to make this a great resume.");
+    askNextQuestionOrSubmit();
+  } else if (data.status === "completed") {
+    setStep(4);
+    addBotMessage("All done! Here's your resume:");
+    addResumeCard(data.structured_output);
+    mode = "done";
+    setComposer(false, "Click \"Restart\" above to build another resume");
+  } else if (data.status === "failed") {
+    addBotMessage("Generation failed: " + (data.validation_errors || []).join("; ") + "\nWant to try again? Send another message with a bit more detail.");
+    mode = "background";
+    setStep(2);
+    setComposer(true);
+  } else {
+    addBotMessage("Still processing (status: " + data.status + ") - try again shortly.");
+    mode = "background";
+    setComposer(true);
+  }
+}
+
+function askNextQuestionOrSubmit() {
+  if (questionQueue.length > 0) {
+    const q = questionQueue.shift();
+    currentQuestionField = q.field;
+    mode = "answering";
+    addBotMessage(q.question);
+    if (q.options && q.options.length) {
+      addQuickReplies(
+        q.options.map((value) => ({
+          label: value,
+          onPick: () => {
+            addUserMessage(value);
+            recordAnswer(value);
+          },
+        })),
+        "option-btn",
+        "Pick one, or type your own answer below:"
+      );
+    }
+    setComposer(true, "Type your answer...");
+  } else {
+    submitAnswers();
+  }
+}
+
+async function submitAnswers() {
+  mode = "busy";
+  setComposer(false);
+  showTyping();
+  try {
+    const data = await callApi(`/resume/sessions/${threadId}/answers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: collectedAnswers }),
+    });
+    hideTyping();
+    handleSessionResponse(data);
+  } catch (err) {
+    hideTyping();
+    addBotMessage("Something went wrong: " + err.message + "\nLet's try that last answer again.");
+    mode = "answering";
+    setComposer(true, "Type your answer...");
+  }
+}
+
+/* ---- Resume card ---- */
+function resumeToPlainText(output) {
+  const c = output.contact || {};
+  const lines = [];
+  lines.push(c.full_name || "Unnamed Candidate");
+  if (c.headline) lines.push(c.headline);
+  lines.push([c.email, c.phone, c.location, c.linkedin, c.portfolio_url].filter(Boolean).join(" | "));
+  if (output.summary) lines.push("", output.summary);
+  if ((output.work_experience || []).length) {
+    lines.push("", "EXPERIENCE");
+    output.work_experience.forEach((e) => {
+      lines.push(`${e.job_title || ""}${e.company ? " - " + e.company : ""} (${e.start_date || ""} - ${e.is_current ? "Present" : (e.end_date || "")})`);
+      (e.responsibilities || []).forEach((r) => lines.push("  - " + r));
+    });
+  }
+  if ((output.education || []).length) {
+    lines.push("", "EDUCATION");
+    output.education.forEach((ed) => lines.push(`${ed.degree || ""}${ed.institution ? ", " + ed.institution : ""} (${ed.start_date || ""} - ${ed.is_current ? "Present" : (ed.end_date || "")})`));
+  }
+  if ((output.projects || []).length) {
+    lines.push("", "PROJECTS");
+    output.projects.forEach((p) => {
+      lines.push(`${p.name || ""}${p.technologies && p.technologies.length ? " (" + p.technologies.join(", ") + ")" : ""}`);
+      if (p.description) lines.push("  " + p.description);
+    });
+  }
+  if ((output.volunteer_experience || []).length) {
+    lines.push("", "VOLUNTEER EXPERIENCE");
+    output.volunteer_experience.forEach((v) => {
+      lines.push(`${v.role || ""}${v.organization ? " - " + v.organization : ""} (${v.start_date || ""} - ${v.is_current ? "Present" : (v.end_date || "")})`);
+      (v.description || []).forEach((d) => lines.push("  - " + d));
+    });
+  }
+  if ((output.skills || []).length) lines.push("", "SKILLS", output.skills.join(", "));
+  if ((output.certifications || []).length) lines.push("", "CERTIFICATIONS", output.certifications.join(", "));
+  if ((output.languages || []).length) lines.push("", "LANGUAGES", output.languages.join(", "));
+  if ((output.awards || []).length) {
+    lines.push("", "AWARDS");
+    output.awards.forEach((a) => lines.push(`${a.title || ""}${a.issuer ? ", " + a.issuer : ""}${a.date ? " (" + a.date + ")" : ""}`));
+  }
+  if ((output.publications || []).length) {
+    lines.push("", "PUBLICATIONS");
+    output.publications.forEach((p) => lines.push(`${p.title || ""}${p.publisher ? ", " + p.publisher : ""}${p.date ? " (" + p.date + ")" : ""}`));
+  }
+  if ((output.affiliations || []).length) lines.push("", "AFFILIATIONS", output.affiliations.join(", "));
+  if (output.references_note) lines.push("", "REFERENCES", output.references_note);
+  return lines.join("\n");
+}
+
+function buildResumeDocInnerHtml(output) {
+  const c = output.contact || {};
+  const contactBits = [c.email, c.phone, c.location, c.linkedin, c.portfolio_url].filter(Boolean).join("  &middot;  ");
+
+  const expHtml = (output.work_experience || []).map(e => `
+    <div class="exp-item">
+      <div class="title-line"><span>${escapeHtml(e.job_title || "")}${e.company ? " - " + escapeHtml(e.company) : ""}</span><span>${escapeHtml(e.start_date || "")} - ${e.is_current ? "Present" : escapeHtml(e.end_date || "")}</span></div>
+      <div class="sub-line">${escapeHtml(e.location || "")}</div>
+      <ul>${(e.responsibilities || []).map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>
+    </div>`).join("");
+
+  const eduHtml = (output.education || []).map(ed => `
+    <div class="edu-item">
+      <div class="title-line"><span>${escapeHtml(ed.degree || "")}${ed.institution ? ", " + escapeHtml(ed.institution) : ""}</span><span>${escapeHtml(ed.start_date || "")} - ${ed.is_current ? "Present" : escapeHtml(ed.end_date || "")}</span></div>
+      <div class="sub-line">${escapeHtml(ed.location || "")}${ed.gpa ? " &middot; GPA " + escapeHtml(ed.gpa) : ""}</div>
+    </div>`).join("");
+
+  const projHtml = (output.projects || []).map(p => `
+    <div class="exp-item">
+      <div class="title-line"><span>${escapeHtml(p.name || "")}</span></div>
+      ${p.description ? `<div class="sub-line">${escapeHtml(p.description)}</div>` : ""}
+      ${(p.technologies || []).length ? `<div class="skills-list">${p.technologies.map(t => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+    </div>`).join("");
+
+  const volHtml = (output.volunteer_experience || []).map(v => `
+    <div class="exp-item">
+      <div class="title-line"><span>${escapeHtml(v.role || "")}${v.organization ? " - " + escapeHtml(v.organization) : ""}</span><span>${escapeHtml(v.start_date || "")} - ${v.is_current ? "Present" : escapeHtml(v.end_date || "")}</span></div>
+      <div class="sub-line">${escapeHtml(v.location || "")}</div>
+      <ul>${(v.description || []).map(d => `<li>${escapeHtml(d)}</li>`).join("")}</ul>
+    </div>`).join("");
+
+  const awardsHtml = (output.awards || []).map(a => `
+    <div class="edu-item">
+      <div class="title-line"><span>${escapeHtml(a.title || "")}${a.issuer ? ", " + escapeHtml(a.issuer) : ""}</span><span>${escapeHtml(a.date || "")}</span></div>
+      ${a.description ? `<div class="sub-line">${escapeHtml(a.description)}</div>` : ""}
+    </div>`).join("");
+
+  const pubsHtml = (output.publications || []).map(p => `
+    <div class="edu-item">
+      <div class="title-line"><span>${escapeHtml(p.title || "")}${p.publisher ? ", " + escapeHtml(p.publisher) : ""}</span><span>${escapeHtml(p.date || "")}</span></div>
+    </div>`).join("");
+
+  const skillsHtml = (output.skills || []).map(s => `<span>${escapeHtml(s)}</span>`).join("");
+  const certsHtml = (output.certifications || []).map(s => `<span>${escapeHtml(s)}</span>`).join("");
+  const langsHtml = (output.languages || []).map(s => `<span>${escapeHtml(s)}</span>`).join("");
+  const affilHtml = (output.affiliations || []).map(s => `<span>${escapeHtml(s)}</span>`).join("");
+
+  return `
+    <h2>${escapeHtml(c.full_name || "Unnamed Candidate")}</h2>
+    ${c.headline ? `<div class="contact-line" style="font-weight:600;color:#333;">${escapeHtml(c.headline)}</div>` : ""}
+    <div class="contact-line">${contactBits}</div>
+    ${output.summary ? `<div class="summary">${escapeHtml(output.summary)}</div>` : ""}
+    ${expHtml ? `<section><h3>Experience</h3>${expHtml}</section>` : ""}
+    ${eduHtml ? `<section><h3>Education</h3>${eduHtml}</section>` : ""}
+    ${projHtml ? `<section><h3>Projects</h3>${projHtml}</section>` : ""}
+    ${volHtml ? `<section><h3>Volunteer Experience</h3>${volHtml}</section>` : ""}
+    ${skillsHtml ? `<section><h3>Skills</h3><div class="skills-list">${skillsHtml}</div></section>` : ""}
+    ${certsHtml ? `<section><h3>Certifications</h3><div class="skills-list">${certsHtml}</div></section>` : ""}
+    ${langsHtml ? `<section><h3>Languages</h3><div class="skills-list">${langsHtml}</div></section>` : ""}
+    ${awardsHtml ? `<section><h3>Awards</h3>${awardsHtml}</section>` : ""}
+    ${pubsHtml ? `<section><h3>Publications</h3>${pubsHtml}</section>` : ""}
+    ${affilHtml ? `<section><h3>Affiliations</h3><div class="skills-list">${affilHtml}</div></section>` : ""}
+    ${output.references_note ? `<section><h3>References</h3><div class="sub-line">${escapeHtml(output.references_note)}</div></section>` : ""}
+  `;
+}
+
+/* ---- Resume themes ---- */
+const RESUME_THEMES = [
+  { id: "classic", label: "Classic", dot: "#6d5eff" },
+  { id: "modern", label: "Modern", dot: "#0f9b8e" },
+  { id: "minimal", label: "Minimal", dot: "#888888" },
+  { id: "bold", label: "Bold", dot: "#e0553f" },
+];
+let resumeTheme = "classic";
+
+function applyResumeTheme(theme) {
+  resumeTheme = theme;
+  const docEl = el("resumeModalDoc");
+  RESUME_THEMES.forEach((t) => docEl.classList.remove("theme-" + t.id));
+  docEl.classList.add("theme-" + theme);
+}
+
+/* ---- Resume edit screen ---- */
+let editWorkingCopy = null;
+
+function efField(label, group, field, value, opts) {
+  opts = opts || {};
+  return `
+    <div class="field-group">
+      <label>${label}</label>
+      <input type="text" data-group="${group}" data-field="${field}" value="${escapeHtml(value || "")}" placeholder="${escapeHtml(opts.placeholder || "")}" />
+    </div>`;
+}
+
+function efTextarea(label, group, field, value, hint) {
+  return `
+    <div class="field-group">
+      ${label ? `<label>${label}</label>` : ""}
+      <textarea data-group="${group}" data-field="${field}">${escapeHtml(value || "")}</textarea>
+      ${hint ? `<div class="field-hint">${hint}</div>` : ""}
+    </div>`;
+}
+
+function efCheckbox(label, group, field, checked) {
+  return `
+    <label class="field-checkbox">
+      <input type="checkbox" data-group="${group}" data-field="${field}" ${checked ? "checked" : ""} />
+      ${label}
+    </label>`;
+}
+
+function efEntryCard(section, innerHtml) {
+  return `
+    <div class="entry-card" data-section="${section}">
+      <button type="button" class="entry-card-remove" data-remove-entry title="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      ${innerHtml}
+    </div>`;
+}
+
+const EF_ENTRY_BUILDERS = {
+  work_experience: (e) => efEntryCard("work_experience", `
+    <div class="field-grid">
+      ${efField("Job title", "entry", "job_title", (e || {}).job_title)}
+      ${efField("Company", "entry", "company", (e || {}).company)}
+      ${efField("Location", "entry", "location", (e || {}).location)}
+      ${efField("Start date", "entry", "start_date", (e || {}).start_date, { placeholder: "e.g. 2020-01" })}
+      ${efField("End date", "entry", "end_date", (e || {}).end_date, { placeholder: "e.g. 2023-06" })}
+    </div>
+    ${efCheckbox("Currently working here", "entry", "is_current", (e || {}).is_current)}
+    ${efTextarea("Responsibilities / achievements", "entry", "responsibilities", ((e || {}).responsibilities || []).join("\n"), "One bullet point per line.")}
+  `),
+  education: (e) => efEntryCard("education", `
+    <div class="field-grid">
+      ${efField("Degree", "entry", "degree", (e || {}).degree)}
+      ${efField("Institution", "entry", "institution", (e || {}).institution)}
+      ${efField("Location", "entry", "location", (e || {}).location)}
+      ${efField("Start date", "entry", "start_date", (e || {}).start_date, { placeholder: "e.g. 2014-09" })}
+      ${efField("End date", "entry", "end_date", (e || {}).end_date, { placeholder: "e.g. 2018-05" })}
+      ${efField("GPA", "entry", "gpa", (e || {}).gpa)}
+    </div>
+    ${efCheckbox("Currently studying here", "entry", "is_current", (e || {}).is_current)}
+  `),
+  projects: (e) => efEntryCard("projects", `
+    <div class="field-grid">
+      ${efField("Project name", "entry", "name", (e || {}).name)}
+      ${efField("Technologies (comma-separated)", "entry", "technologies", ((e || {}).technologies || []).join(", "))}
+    </div>
+    ${efTextarea("Description", "entry", "description", (e || {}).description)}
+  `),
+  volunteer_experience: (e) => efEntryCard("volunteer_experience", `
+    <div class="field-grid">
+      ${efField("Role", "entry", "role", (e || {}).role)}
+      ${efField("Organization", "entry", "organization", (e || {}).organization)}
+      ${efField("Location", "entry", "location", (e || {}).location)}
+      ${efField("Start date", "entry", "start_date", (e || {}).start_date)}
+      ${efField("End date", "entry", "end_date", (e || {}).end_date)}
+    </div>
+    ${efCheckbox("Currently active", "entry", "is_current", (e || {}).is_current)}
+    ${efTextarea("Description", "entry", "description", ((e || {}).description || []).join("\n"), "One point per line.")}
+  `),
+  awards: (e) => efEntryCard("awards", `
+    <div class="field-grid">
+      ${efField("Title", "entry", "title", (e || {}).title)}
+      ${efField("Issuer", "entry", "issuer", (e || {}).issuer)}
+      ${efField("Date", "entry", "date", (e || {}).date)}
+    </div>
+    ${efTextarea("Description", "entry", "description", (e || {}).description)}
+  `),
+  publications: (e) => efEntryCard("publications", `
+    <div class="field-grid">
+      ${efField("Title", "entry", "title", (e || {}).title)}
+      ${efField("Publisher", "entry", "publisher", (e || {}).publisher)}
+      ${efField("Date", "entry", "date", (e || {}).date)}
+      ${efField("URL", "entry", "url", (e || {}).url)}
+    </div>
+  `),
+};
+
+const EF_SECTIONS = [
+  { key: "work_experience", label: "Work experience" },
+  { key: "education", label: "Education" },
+  { key: "projects", label: "Projects" },
+  { key: "volunteer_experience", label: "Volunteer experience" },
+  { key: "awards", label: "Awards" },
+  { key: "publications", label: "Publications" },
+];
+
+function buildEditFormHtml(data) {
+  const c = data.contact || {};
+
+  const themePickerHtml = `
+    <div class="theme-picker">
+      ${RESUME_THEMES.map((t) => `
+        <button type="button" class="theme-swatch ${resumeTheme === t.id ? "active" : ""}" data-theme="${t.id}">
+          <span class="dot" style="background:${t.dot}"></span>${t.label}
+        </button>`).join("")}
+    </div>`;
+
+  const repeatableSectionsHtml = EF_SECTIONS.map((s) => `
+    <div class="edit-section">
+      <div class="edit-section-head"><h4>${s.label}</h4></div>
+      <div class="entry-list" data-entry-list="${s.key}">
+        ${(data[s.key] || []).map(EF_ENTRY_BUILDERS[s.key]).join("")}
+      </div>
+      <button type="button" class="add-entry-btn" data-add-section="${s.key}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add ${s.label.toLowerCase()}
+      </button>
+    </div>`).join("");
+
+  return `
+    <div class="resume-edit-inner">
+      <div class="resume-edit-intro">Edit any text below, pick a theme, then hit "Save &amp; preview" up top. Changes are discarded if you close without saving.</div>
+
+      <div class="edit-section">
+        <div class="edit-section-head"><h4>Theme</h4></div>
+        ${themePickerHtml}
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-head"><h4>Contact</h4></div>
+        <div class="field-grid">
+          ${efField("Full name", "contact", "full_name", c.full_name)}
+          ${efField("Headline / title", "contact", "headline", c.headline)}
+          ${efField("Email", "contact", "email", c.email)}
+          ${efField("Phone", "contact", "phone", c.phone)}
+          ${efField("Location", "contact", "location", c.location)}
+          ${efField("LinkedIn", "contact", "linkedin", c.linkedin)}
+          ${efField("Portfolio URL", "contact", "portfolio_url", c.portfolio_url)}
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-head"><h4>Summary</h4></div>
+        ${efTextarea("Professional summary", "top", "summary", data.summary)}
+      </div>
+
+      ${repeatableSectionsHtml}
+
+      <div class="edit-section">
+        <div class="edit-section-head"><h4>Skills &amp; more</h4></div>
+        ${efTextarea("Skills (comma-separated)", "top", "skills", (data.skills || []).join(", "))}
+        ${efTextarea("Certifications (comma-separated)", "top", "certifications", (data.certifications || []).join(", "))}
+        ${efTextarea("Languages (comma-separated)", "top", "languages", (data.languages || []).join(", "))}
+        ${efTextarea("Affiliations (comma-separated)", "top", "affiliations", (data.affiliations || []).join(", "))}
+        ${efField("References note", "top", "references_note", data.references_note)}
+      </div>
+    </div>`;
+}
+
+function efGetVal(scopeEl, group, field) {
+  const input = scopeEl.querySelector(`[data-group="${group}"][data-field="${field}"]`);
+  if (!input) return "";
+  if (input.type === "checkbox") return input.checked;
+  return input.value.trim();
+}
+
+function efSplitLines(v) { return (v || "").split("\n").map((s) => s.trim()).filter(Boolean); }
+function efSplitCommas(v) { return (v || "").split(",").map((s) => s.trim()).filter(Boolean); }
+
+function collectEditFormData() {
+  const root = el("resumeEdit");
+
+  const contact = {
+    full_name: efGetVal(root, "contact", "full_name") || "",
+    headline: efGetVal(root, "contact", "headline") || null,
+    email: efGetVal(root, "contact", "email") || null,
+    phone: efGetVal(root, "contact", "phone") || null,
+    location: efGetVal(root, "contact", "location") || null,
+    linkedin: efGetVal(root, "contact", "linkedin") || null,
+    portfolio_url: efGetVal(root, "contact", "portfolio_url") || null,
+  };
+
+  function entries(section) {
+    return Array.from(root.querySelectorAll(`.entry-card[data-section="${section}"]`));
+  }
+
+  const work_experience = entries("work_experience").map((card) => ({
+    job_title: efGetVal(card, "entry", "job_title") || "",
+    company: efGetVal(card, "entry", "company") || "",
+    location: efGetVal(card, "entry", "location") || null,
+    start_date: efGetVal(card, "entry", "start_date") || null,
+    end_date: efGetVal(card, "entry", "end_date") || null,
+    is_current: !!efGetVal(card, "entry", "is_current"),
+    responsibilities: efSplitLines(efGetVal(card, "entry", "responsibilities")),
+  }));
+
+  const education = entries("education").map((card) => ({
+    degree: efGetVal(card, "entry", "degree") || "",
+    institution: efGetVal(card, "entry", "institution") || "",
+    location: efGetVal(card, "entry", "location") || null,
+    start_date: efGetVal(card, "entry", "start_date") || null,
+    end_date: efGetVal(card, "entry", "end_date") || null,
+    is_current: !!efGetVal(card, "entry", "is_current"),
+    gpa: efGetVal(card, "entry", "gpa") || null,
+  }));
+
+  const projects = entries("projects").map((card) => ({
+    name: efGetVal(card, "entry", "name") || "",
+    description: efGetVal(card, "entry", "description") || null,
+    technologies: efSplitCommas(efGetVal(card, "entry", "technologies")),
+  }));
+
+  const volunteer_experience = entries("volunteer_experience").map((card) => ({
+    role: efGetVal(card, "entry", "role") || "",
+    organization: efGetVal(card, "entry", "organization") || "",
+    location: efGetVal(card, "entry", "location") || null,
+    start_date: efGetVal(card, "entry", "start_date") || null,
+    end_date: efGetVal(card, "entry", "end_date") || null,
+    is_current: !!efGetVal(card, "entry", "is_current"),
+    description: efSplitLines(efGetVal(card, "entry", "description")),
+  }));
+
+  const awards = entries("awards").map((card) => ({
+    title: efGetVal(card, "entry", "title") || "",
+    issuer: efGetVal(card, "entry", "issuer") || null,
+    date: efGetVal(card, "entry", "date") || null,
+    description: efGetVal(card, "entry", "description") || null,
+  }));
+
+  const publications = entries("publications").map((card) => ({
+    title: efGetVal(card, "entry", "title") || "",
+    publisher: efGetVal(card, "entry", "publisher") || null,
+    date: efGetVal(card, "entry", "date") || null,
+    url: efGetVal(card, "entry", "url") || null,
+  }));
+
+  return {
+    ...editWorkingCopy,
+    contact,
+    summary: efGetVal(root, "top", "summary") || null,
+    work_experience, education, projects, volunteer_experience, awards, publications,
+    skills: efSplitCommas(efGetVal(root, "top", "skills")),
+    certifications: efSplitCommas(efGetVal(root, "top", "certifications")),
+    languages: efSplitCommas(efGetVal(root, "top", "languages")),
+    affiliations: efSplitCommas(efGetVal(root, "top", "affiliations")),
+    references_note: efGetVal(root, "top", "references_note") || null,
+  };
+}
+
+function setResumeModalMode(mode) {
+  const isEdit = mode === "edit";
+  el("resumeModalBody").classList.toggle("hidden", isEdit);
+  el("resumeEdit").classList.toggle("hidden", !isEdit);
+  el("resumeViewActions").classList.toggle("hidden", isEdit);
+  el("resumeEditActions").classList.toggle("hidden", !isEdit);
+  el("resumeModalTitleText").textContent = isEdit ? "Editing resume" : "Resume ready";
+}
+
+function openEditScreen() {
+  if (!lastResumeOutput) return;
+  editWorkingCopy = JSON.parse(JSON.stringify(lastResumeOutput));
+  el("resumeEdit").innerHTML = buildEditFormHtml(editWorkingCopy);
+  setResumeModalMode("edit");
+  el("resumeEdit").scrollTop = 0;
+}
+
+function saveEditScreen() {
+  const updated = collectEditFormData();
+  lastResumeOutput = updated;
+  editWorkingCopy = null;
+
+  const docEl = el("resumeModalDoc");
+  docEl.setAttribute("dir", updated.language === "ar" ? "rtl" : "ltr");
+  docEl.innerHTML = buildResumeDocInnerHtml(updated);
+  applyResumeTheme(resumeTheme);
+  el("resumeModalJsonView").textContent = JSON.stringify(updated, null, 2);
+  setResumeModalMode("view");
+}
+
+function cancelEditScreen() {
+  editWorkingCopy = null;
+  setResumeModalMode("view");
+}
+
+/* ---- Fullscreen resume modal ---- */
+let lastResumeOutput = null;
+
+function openResumeModal() {
+  if (!lastResumeOutput) return;
+  el("resumeModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeResumeModal() {
+  cancelEditScreen();
+  el("resumeModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+el("modalCloseBtn").addEventListener("click", closeResumeModal);
+el("resumeModal").addEventListener("click", (e) => {
+  if (e.target.id === "resumeModal") closeResumeModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !el("resumeModal").classList.contains("hidden")) closeResumeModal();
+});
+
+el("modalJsonBtn").addEventListener("click", () => {
+  el("resumeModalJsonView").classList.toggle("hidden");
+});
+
+el("modalEditBtn").addEventListener("click", openEditScreen);
+el("editSaveBtn").addEventListener("click", saveEditScreen);
+el("editCancelBtn").addEventListener("click", cancelEditScreen);
+
+el("resumeEdit").addEventListener("click", (e) => {
+  const themeBtn = e.target.closest("[data-theme]");
+  if (themeBtn) {
+    resumeTheme = themeBtn.dataset.theme;
+    el("resumeEdit").querySelectorAll(".theme-swatch").forEach((b) => b.classList.toggle("active", b === themeBtn));
+    return;
+  }
+  const addBtn = e.target.closest("[data-add-section]");
+  if (addBtn) {
+    const section = addBtn.dataset.addSection;
+    const list = el("resumeEdit").querySelector(`[data-entry-list="${section}"]`);
+    list.insertAdjacentHTML("beforeend", EF_ENTRY_BUILDERS[section]({}));
+    return;
+  }
+  const removeBtn = e.target.closest("[data-remove-entry]");
+  if (removeBtn) {
+    removeBtn.closest(".entry-card").remove();
+  }
+});
+
+el("modalCopyBtn").addEventListener("click", async () => {
+  const btn = el("modalCopyBtn");
+  try {
+    await navigator.clipboard.writeText(resumeToPlainText(lastResumeOutput));
+    flashCopied(btn, "Copied!");
+  } catch {
+    flashCopied(btn, "Copy failed");
+  }
+});
+
+el("modalDownloadBtn").addEventListener("click", () => {
+  const c = (lastResumeOutput && lastResumeOutput.contact) || {};
+  const win = window.open("", "_blank");
+  const docHtmlEl = el("resumeModalDoc").outerHTML;
+  win.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(c.full_name || "Resume")}</title>
+    <style>body{font-family:Arial,Helvetica,sans-serif;margin:40px;} ${document.querySelector("style").textContent}</style>
+    </head><body>${docHtmlEl}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+});
+
+function addResumeCard(output) {
+  if (!output) { addBotMessage("No structured output was returned."); return; }
+  lastResumeOutput = output;
+  const isRtl = output.language === "ar";
+
+  const docEl = el("resumeModalDoc");
+  docEl.setAttribute("dir", isRtl ? "rtl" : "ltr");
+  docEl.innerHTML = buildResumeDocInnerHtml(output);
+  applyResumeTheme(resumeTheme);
+  el("resumeModalJsonView").textContent = JSON.stringify(output, null, 2);
+  el("resumeModalJsonView").classList.add("hidden");
+  setResumeModalMode("view");
+  openResumeModal();
+
+  addBotMessage("\ud83c\udf89 Your resume is ready! I opened it fullscreen - use the buttons up top to copy, view JSON, download/print, or edit the text and theme.");
+  addQuickReplies([
+    { label: "\ud83d\udcc4 View resume again", onPick: () => { addUserMessage("View resume again"); openResumeModal(); } },
+  ]);
+}
+
+function flashCopied(btn, label) {
+  const original = btn.innerHTML;
+  btn.innerHTML = `${ICONS.check} ${label}`;
+  btn.classList.add("copied");
+  setTimeout(() => { btn.innerHTML = original; btn.classList.remove("copied"); }, 1800);
+}
+
+/* ---- Restart ---- */
+el("restartLink").addEventListener("click", resetChat);
+
+function resetChat() {
+  threadId = null;
+  pendingFiles = [];
+  questionQueue = [];
+  currentQuestionField = null;
+  collectedAnswers = {};
+  language = "en";
+  mode = "language";
+  lastResumeOutput = null;
+  closeResumeModal();
+  messagesEl.innerHTML = "";
+  renderFileChips();
+  setComposer(false, "Type a message...");
+  setStep(1);
+  startConversation();
+}
+
+startConversation();
+</script>
+</body>
+</html>

@@ -1,4 +1,11 @@
-from app.modules.resume.schema import ContactInfo, ResumeOutput, WorkExperience
+from app.modules.resume.schema import (
+    Award,
+    ContactInfo,
+    Publication,
+    ResumeOutput,
+    VolunteerExperience,
+    WorkExperience,
+)
 from app.modules.resume.validation import (
     check_date_consistency,
     check_duplicate_experience,
@@ -52,3 +59,37 @@ def test_detects_date_inconsistency():
 def test_detects_insufficient_content():
     resume = _resume()
     assert len(check_minimum_content(resume)) == 1
+
+
+def test_volunteer_only_resume_counts_as_sufficient_content():
+    resume = _resume(
+        volunteer_experience=[
+            VolunteerExperience(role="Coordinator", organization="Local Shelter")
+        ]
+    )
+    assert check_minimum_content(resume) == []
+
+
+def test_optional_sections_default_to_empty():
+    resume = _resume()
+    assert resume.volunteer_experience == []
+    assert resume.awards == []
+    assert resume.publications == []
+    assert resume.affiliations == []
+    assert resume.contact.headline is None
+    assert resume.references_note is None
+
+
+def test_optional_sections_accept_data():
+    resume = _resume(
+        contact=ContactInfo(full_name="Jane Sample", headline="Senior Engineer"),
+        awards=[Award(title="Employee of the Year", issuer="Example Corp", date="2023")],
+        publications=[Publication(title="Scaling APIs", publisher="Tech Journal")],
+        affiliations=["Member, IEEE"],
+        references_note="Available upon request",
+    )
+    assert resume.contact.headline == "Senior Engineer"
+    assert resume.awards[0].title == "Employee of the Year"
+    assert resume.publications[0].title == "Scaling APIs"
+    assert resume.affiliations == ["Member, IEEE"]
+    assert resume.references_note == "Available upon request"
