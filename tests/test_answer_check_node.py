@@ -114,6 +114,23 @@ def test_check_answers_rejects_empty_answer_without_calling_the_model(mock_invok
 
 @patch("app.graph.nodes.get_model_with_fallback")
 @patch("app.graph.nodes.invoke_with_retry")
+def test_check_answers_rejects_bad_email_with_direct_correction_hint(mock_invoke, mock_get_model):
+    check_answers = build_answer_check_node(RESUME_VERTICAL)
+    result = check_answers({
+        "user_answers": {"email": "not-an-email"},
+        "follow_up_questions": [{"field": "email", "question": "What is your email?"}],
+        "extracted_data": {"email": "not-an-email"},
+    })
+
+    assert not mock_get_model.called
+    assert not mock_invoke.called
+    assert result["invalid_answer_fields"] == ["email"]
+    assert "Please correct" in result["missing_field_hints"]["email"]
+    assert "email" not in result["extracted_data"]
+
+
+@patch("app.graph.nodes.get_model_with_fallback")
+@patch("app.graph.nodes.invoke_with_retry")
 def test_check_answers_rejects_echoed_question_without_calling_the_model(mock_invoke, mock_get_model):
     check_answers = build_answer_check_node(RESUME_VERTICAL)
     result = check_answers({

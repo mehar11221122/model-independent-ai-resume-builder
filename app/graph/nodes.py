@@ -7,6 +7,7 @@ VerticalConfig change per vertical.
 """
 import json
 import logging
+import re
 from typing import Any
 
 from app.core.config import get_settings
@@ -246,6 +247,34 @@ def _normalize_for_compare(text: str) -> str:
     return (text or "").strip().rstrip("?!.\u061f").lower()
 
 
+def _deterministic_answer_reason(field: str, answer: str, question: str, language: str) -> str | None:
+    """Return a deterministic correction reason for clearly malformed answers.
+
+    These checks are intentionally simple and local: they reject obvious
+    formatting errors (such as a malformed email address) without calling the
+    LLM and without needing any vertical-specific knowledge beyond the field
+    name.
+    """
+    value = (answer or "").strip()
+    if not value:
+        return None
+
+    normalized_field = (field or "").lower()
+    if normalized_field == "email":
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
+            if language == "ar":
+                return "يرجى تصحيح هذه الإجابة وإدخال بريد إلكتروني صالح."
+            return "Please correct that answer and enter a valid email address."
+
+    if normalized_field in {"phone", "mobile", "telephone"}:
+        if not re.fullmatch(r"\+?[0-9\s().-]{7,15}", value):
+            if language == "ar":
+                return "يرجى تصحيح هذه الإجابة وإدخال رقم هاتف صالح."
+            return "Please correct that answer and enter a valid phone number."
+
+    return None
+
+
 def build_answer_check_node(config: VerticalConfig):
     """Sanity-checks the answers a user just gave against the specific
     question that prompted them, before they're trusted for generation.
@@ -292,7 +321,11 @@ def build_answer_check_node(config: VerticalConfig):
             elif _normalize_for_compare(answer) == _normalize_for_compare(pair["question"]):
                 invalid_map[field] = _ECHOED_QUESTION_REASON.get(language, _ECHOED_QUESTION_REASON["en"])
             else:
-                remaining_pairs[field] = pair
+                reason = _deterministic_answer_reason(field, answer, pair["question"], language)
+                if reason:
+                    invalid_map[field] = reason
+                else:
+                    remaining_pairs[field] = pair
 
         if remaining_pairs:
             settings = get_settings()
